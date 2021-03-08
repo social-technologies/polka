@@ -1,94 +1,101 @@
-name: Master
+name: IPFS
 on:
-  push:
-    branches:
-      - master
+  schedule:
+    - cron:  '0 11 * * 1' # every day 11:00 UTC Monday
+
+  # manual trigger
+  workflow_dispatch:
 
 jobs:
-  # publish to gh-pages (& IPFS when a release is detected)
-  www:
-    strategy:
-      matrix:
-        step: ['build:release:www']
-    name: ${{ matrix.step }}
-    if: "! startsWith(github.event.head_commit.message, '[CI Skip]') && github.repository == 'polkadot-js/apps'"
+  bump_version:
+    name: Bump Version
     runs-on: ubuntu-latest
+    outputs:
+      new_tag: ${{ steps.github_tag_action.outputs.new_tag }}
+      changelog: ${{ steps.github_tag_action.outputs.changelog }}
     steps:
-    - uses: actions/checkout@v2
-      with:
-        token: ${{ secrets.GH_PAT }}
-    - name: ${{ matrix.step }}
-      env:
-        CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
-        CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-        GH_PAGES_SRC: packages/apps/build
-        GH_PAT: ${{ secrets.GH_PAT }}
-        GH_RELEASE_GITHUB_API_TOKEN: ${{ secrets.GH_PAT }}
-        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        PINATA_API_KEY: ${{ secrets.PINATA_API_KEY }}
-        PINATA_SECRET_KEY: ${{ secrets.PINATA_SECRET_KEY }}
-      run: |
-        yarn install --immutable | grep -v 'YN0013'
-        yarn ${{ matrix.step }}
+      - name: Checkout
+        uses: actions/checkout@v1
 
-  # only run on "CI skip", i.e. when the actual version has been bumped to release/stable
-  docker:
-    name: docker
-    if: "startsWith(github.event.head_commit.message, '[CI Skip] release/stable') && github.repository == 'polkadot-js/apps'"
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: docker
-      env:
-        DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
-      run: |
-        ./scripts/docker.sh
-
-  # only run on "CI skip", i.e. when the actual version has been bumped to release/stable
-  electron:
-    strategy:
-      matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    if: "startsWith(github.event.head_commit.message, '[CI Skip] release/stable') && github.repository == 'polkadot-js/apps'"
-    name: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v2
+      - name: Bump version and push tag
+        id: github_tag_action
+        uses: mathieudutour/github-tag-action@v4.5
         with:
-          token: ${{ secrets.GH_PAT }}
-      - name: Prepare for app notarization (macOS)
-        if: startsWith(matrix.os, 'macos')
-        # Import Apple API key for app notarization on macOS
-        run: |
-          mkdir -p ~/private_keys/
-          echo '${{ secrets.API_KEY }}' > ~/private_keys/AuthKey_${{ secrets.API_KEY_ID }}.p8
-      - name: Build/release Electron app
-        uses: samuelmeuli/action-electron-builder@v1
-        with:
-          # Base64-encoded code signing certificate for macOS
-          mac_certs: ${{ secrets.MAC_CERTS }}
-          # Password for decrypting `mac_certs`
-          mac_certs_password: ${{ secrets.MAC_CERTS_PASSWORD }}
-          # Base64-encoded code signing certificate for Windows
-          windows_certs: ${{ secrets.WINDOWS_CERTS }}
-          # Password for decrypting `windows_certs`
-          windows_certs_password: ${{ secrets.WINDOWS_CERTS_PASSWORD }}
-          # GitHub token, automatically provided to the action
-          # (No need to define this secret in the repo settings)
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          build_script_name: build:release:electron
-          # If the commit is tagged with a version (e.g. "v1.0.0"),
-          # release the app after building
-          release: ${{ startsWith(github.ref, 'refs/tags/v') }}
-        env:
-          # macOS notarization API key
-          API_KEY_ID: ${{ secrets.API_KEY_ID }}
-          API_KEY_ISSUER_ID: ${{ secrets.API_KEY_ISSUER_ID }}
+          release_branches: .*
 
-  # dummy, GH actions fails outright when all steps are skipped (like it can be above)
-  dummy:
+  create_release:
+    name: Create Release
     runs-on: ubuntu-latest
+    needs: bump_version
+    #if: ${{ needs.bump_version.outputs.new_tag != null }}
     steps:
-    - name: dummy
-      run: |
-        echo "Dummy skip step"
+      - name: Checkout
+        uses: actions/checkout@v1
+
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '12'
+          always-auth: true
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: yarn
+
+      - name: Build the IPFS bundle
+        run: yarn build:www
+
+      - name: Pin to IPFS
+        id: upload
+        uses: social-network/ipfs-pinata-deploy-action@master
+        with:
+          pin-name: 'Explorer ${{ needs.bump_version.outputs.new_tag }}'
+          path: './packages/apps/build'
+          verbose: true
+          remove-old: false
+          pinata-api-key: ${{ secrets.PINATA_API_KEY }}
+          pinata-secret-api-key: ${{ secrets.PINATA_API_SECRET_KEY }}
+
+      - name: Convert CIDv0 to CIDv1
+        id: convert_cidv0
+        uses: uniswap/convert-cidv0-cidv1@v1.0.0
+        with:
+          cidv0: ${{ steps.upload.outputs.hash }}
+
+      - name: Update DNS with new IPFS hash
+        env:
+          CLOUDFLARE_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+          RECORD_DOMAIN: 'social.network'
+          RECORD_NAME: '_dnslink.polka'
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        uses: textileio/cloudflare-update-dnslink@0fe7b7a1ffc865db3a4da9773f0f987447ad5848
+        with:
+          cid: ${{ steps.upload.outputs.hash }}
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1.1.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.bump_version.outputs.new_tag }}
+          release_name: Release ${{ needs.bump_version.outputs.new_tag }}
+          body: |
+            IPFS hash of the deployment:
+            - CIDv0: `${{ steps.upload.outputs.hash }}`
+            - CIDv1: `${{ steps.convert_cidv0.outputs.cidv1 }}`
+            The latest release is always accessible via our alias to the Cloudflare IPFS gateway at [ipfs.social.network](https://ipfs.social.network).
+            You can also access the Social Explorer Interface directly from an IPFS gateway.
+            The Social Blockchain Explorer interface uses [`localStorage`](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage) to store your settings.
+            **Beware** that other sites you access via the _same_ IPFS gateway can read and modify your settings on the Social Blockchain Explorer interface without your permission.
+            You can avoid this issue by using a subdomain IPFS gateway, or our alias to the latest release at [polka.social.network](polka.social.network).
+            The preferred URLs below are safe to use to access this specific release.
+            Preferred URLs:
+            - https://${{ steps.convert_cidv0.outputs.cidv1 }}.ipfs.dweb.link/
+            - https://${{ steps.convert_cidv0.outputs.cidv1 }}.ipfs.cf-ipfs.com/
+            - [ipfs://${{ steps.upload.outputs.hash }}/](ipfs://${{ steps.upload.outputs.hash }}/)
+            Other IPFS gateways:
+            - https://cloudflare-ipfs.com/ipfs/${{ steps.upload.outputs.hash }}/
+            - https://ipfs.infura.io/ipfs/${{ steps.upload.outputs.hash }}/
+            - https://ipfs.io/ipfs/${{ steps.upload.outputs.hash }}/
+            ${{ needs.bump_version.outputs.changelog }}
