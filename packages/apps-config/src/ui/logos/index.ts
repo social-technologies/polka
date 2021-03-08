@@ -8,6 +8,7 @@
 // alphabetical
 import chainDusty from './chains/dusty.png';
 import chainKusama from './chains/kusama-128.gif';
+import chainSocial from './chains/social.svg';
 import chainRococo from './chains/rococo.svg';
 import chainRococoTick from './chains/rococo-tick.svg';
 import chainRococoTrack from './chains/rococo-track.svg';
@@ -64,6 +65,7 @@ export const chainLogos: Record<string, unknown> = [
   ['Kusama CC3', chainKusama],
   ['Moonbase Alpha', moonbeam],
   ['PolkaBTC', nodePolkaBTC],
+  ['Social', chainSocial],
   ['Rococo', chainRococo],
   ['Tick', chainRococoTick],
   ['Track', chainRococoTrack],
@@ -159,6 +161,7 @@ export const namedLogos: Record<string, unknown> = {
   rococoTrick: chainRococoTrick,
   'sora-substrate': nodeSora,
   stafi: nodeStafi,
+  social: chainSocial,
   subsocial: nodeSubsocial,
   substrate: nodeSubstrate,
   westend: nodePolkadot,

@@ -48,6 +48,12 @@ export function createTesting (t: TFunction): LinkOption[] {
       value: 'wss://canvas-rpc.parity.io'
     },
     {
+      info: 'social',
+      text: t('rpc.social', 'Chi', { ns: 'apps-config' }),
+      textBy: t('rpc.hosted.by', 'hosted by {{host}}', { ns: 'apps-config', replace: { host: 'Social Technologies' } }),
+      value: 'wss://the.chi.network'
+    },
+    {
       info: 'crust',
       text: t('rpc.crust.network', 'Crust Maxwell CC2', { ns: 'apps-config' }),
       textBy: t('rpc.hosted.by', 'hosted by {{host}}', { ns: 'apps-config', replace: { host: 'Crust Network' } }),
