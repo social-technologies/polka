@@ -9,7 +9,7 @@ import { settings } from '@polkadot/ui-settings';
 import { useTranslation } from '../translate';
 import BaseOverlay from './Base';
 
-const wsUrl = 'wss://the.chi.network';
+const wsUrl = 'settings.apiUrl';
 const isWs = typeof wsUrl === 'string' && wsUrl.startsWith('ws://');
 const isWsLocal = typeof wsUrl === 'string' && wsUrl.includes('127.0.0.1');
 const isHttps = window.location.protocol.startsWith('https:');

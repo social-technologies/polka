@@ -12,7 +12,7 @@ export const identityNodes: Record<string, string> = [
   ['parity-polkadot', 'polkadot'],
   ['phala-substrate-node', 'substrate'],
   ['polkadot-js', 'polkadot'],
-  ['social', 'beachball'],
+  ['social-network', 'beachball'],
   ['subsocial-node', 'substrate'],
   ['substrate-node', 'substrate']
 ].reduce((icons, [spec, icon]): Record<string, string> => ({

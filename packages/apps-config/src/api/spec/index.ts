@@ -24,7 +24,7 @@ import plasm from './plasm';
 import robonomics from './robonomics';
 import stablePoc from './stable-poc';
 import stafi from './stafi';
-import social from './social';
+import socialNetwork from './social-network';
 import subsocial from './subsocial';
 import zero from './zero';
 
@@ -56,7 +56,7 @@ export default {
   'stable-poc': stablePoc,
   stable_poc: stablePoc,
   stafi,
-  social,
+  'social-network': socialNetwork,
   subsocial,
   subzero: zero
 };

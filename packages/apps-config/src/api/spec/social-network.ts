@@ -20,9 +20,7 @@ export default {
     creation: "Moment",
     nonce: "u64"
   },
-  TokenId: "u64",
   SwapId: "u64",
-  TokenBalance: "u64",
   Swap: {
     token_id: "TokenId",
     swap_token: "TokenId",
@@ -89,5 +87,10 @@ export default {
   ChainId: "u8",
   ResourceId: "Vec<u8>",
   ExchangeId: "u64",
-  CurrencyOf: "Balance"
+  CurrencyOf: "Balance",
+  NftId: "U256",
+  Erc721Token: {
+    id: "NftId",
+    metadata: "Vec<u8>"
+  }
 };

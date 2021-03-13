@@ -48,10 +48,10 @@ export function createTesting (t: TFunction): LinkOption[] {
       value: 'wss://canvas-rpc.parity.io'
     },
     {
-      info: 'social',
-      text: t('rpc.social', 'Chi', { ns: 'apps-config' }),
+      info: 'social-network',
+      text: t('rpc.social-network', 'Social Network Alpha', { ns: 'apps-config' }),
       textBy: t('rpc.hosted.by', 'hosted by {{host}}', { ns: 'apps-config', replace: { host: 'Social Technologies' } }),
-      value: 'wss://the.chi.network'
+      value: 'wss://chi1.social.network'
     },
     {
       info: 'crust',

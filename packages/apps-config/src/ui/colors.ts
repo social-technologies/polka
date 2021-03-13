@@ -19,7 +19,7 @@ const chainPlasm = '#2096F3';
 const chainPolkabtc = '#510101';
 const chainPolkadot = '#e6007a';
 const chainKusama = '#000000';
-const chainSocial = 'linear-gradient(-45deg, #F2F2F2 0%, #1E222C 53%, #000000 100%)';
+const chainSocialNetwork = 'linear-gradient(-45deg, #F2F2F2 0%, #1E222C 53%, #000000 100%)';
 const chainRocco = '#6f36dc';
 const chainRoccoAcala = '#173DC9';
 const chainRoccoDarwinia = '#7C30DD';
@@ -56,6 +56,7 @@ export const chainColors: Record<string, any> = [
   ['acala mandala pc1', chainRoccoAcala],
   ['Darwinia Crab', chainCrab],
   ['crust maxwell cc2', chainCrust],
+  ['Chi', chainSocialNetwork],
   ['darwinia cc1', chainDarwinia],
   ['darwinia parachain', chainRoccoDarwinia],
   ['hanonycash', chainHanonycash],
@@ -71,7 +72,6 @@ export const chainColors: Record<string, any> = [
   ['PolkaBTC', chainPolkabtc],
   ['Polkadot', chainPolkadot],
   ['Polkadot CC1', chainPolkadot],
-  ['Social', chainSocial],
   ['Rococo', chainRocco],
   ['Tick', chainRoccoTick],
   ['Track', chainRoccoTrack],
